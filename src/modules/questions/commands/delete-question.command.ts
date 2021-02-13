@@ -2,11 +2,12 @@ import { Command } from '@src/core/decorators/command.decorator';
 import { ArgumentsEnum } from '@src/core/enums/arguments.enum';
 import { ICommand } from '@src/core/interfaces/ICommand';
 import { KnexClient } from '@src/database/client';
-import { EmbedService } from '@src/modules/embed/embed.service';
+import { ReactionsService } from '@src/modules/reactions/reactions.service';
 import { Message } from 'discord.js';
 
 @Command({
   path: 'delete-question',
+  description: 'Удалить вопрос',
   arguments: [
     {
       name: 'id',
@@ -15,9 +16,10 @@ import { Message } from 'discord.js';
   ],
 })
 export class DeleteQuestionCommand implements ICommand {
-  constructor(private client: KnexClient, private embedService: EmbedService) {}
+  constructor(private client: KnexClient, private reactionsService: ReactionsService) {}
 
-  exec(message: Message, args: [number]): void {
-    throw new Error('Method not implemented.');
+  async exec(message: Message, [id]: [number]): Promise<void> {
+    await this.client.knex.delete().where('id', id);
+    this.reactionsService.ok(message);
   }
 }

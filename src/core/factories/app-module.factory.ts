@@ -1,4 +1,7 @@
+import { DB_CONFIG } from '@src/database/constants';
+import { DatabaseConfig } from '@src/database/types';
 import { App } from '../app';
+import { APP_CONFIG, DISCORD_TOKEN } from '../constants/app.constants';
 import {
   COMMAND_METADATA,
   MODULE_METADATA,
@@ -9,11 +12,13 @@ import { Container } from '../injector/container';
 import { Dependency } from '../injector/injector.types';
 import { ICommand } from '../interfaces/ICommand';
 import { IModule } from '../interfaces/IModule';
+import { Logger } from '../logger';
 import { Type } from '../types';
 import { CommandOptions } from '../types/Command';
 import { ModuleOptions, Provider } from '../types/Module';
 
 export class AppModuleFactory {
+  private initializedContainer = new Container();
   private moduleContainer = new Container();
   private providersContainer = new Container();
   private commandsContainer = new Container();
@@ -23,6 +28,26 @@ export class AppModuleFactory {
   async create(module: Type<IModule>): Promise<App> {
     const modules = this.getModules(module);
     const commands = this.getCommands(modules);
+    this.registerProvider({
+      provide: DISCORD_TOKEN,
+      useValue: this.app.client,
+    });
+    const config = this.app.getConfig();
+    this.registerProvider({
+      provide: APP_CONFIG,
+      useValue: config,
+    });
+    this.registerProvider({
+      provide: DB_CONFIG,
+      useValue: {
+        host: config.DB_HOST || '127.0.0.1',
+        database: config.DB_NAME,
+        password: config.DB_PASS,
+        port: +config.DB_PORT,
+        user: config.DB_USER,
+      } as Partial<DatabaseConfig>,
+    });
+    this.registerProvider({ provide: Logger, useValue: this.app.logger });
     this.registerProviders(modules);
     this.app.registerCommands(
       await Promise.all(
@@ -37,6 +62,9 @@ export class AppModuleFactory {
   }
 
   async initializeInstance<T>(instance: Type<T>): Promise<T> {
+    if (this.initializedContainer.getConcrete(this.createToken(instance))) {
+      return this.initializedContainer.getConcrete(this.createToken(instance));
+    }
     const params = Reflect.getMetadata(PARAMTYPES_METADATA, instance) as any[];
     const dependencies = Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, instance) as Dependency[];
     const args: any[] = [];
@@ -52,14 +80,22 @@ export class AppModuleFactory {
             concrete,
           };
         });
-        initialized.forEach((v, i) => {
-          args[i] = v.concrete;
+        params.forEach((v, i) => {
+          const arg =
+            initialized.find((v) => v.index === i)?.concrete ||
+            this.providersContainer.concretes.get(this.createToken(v));
+          if (!arg) {
+            throw new Error(`Provider ${v} is not found`);
+          }
+          args[i] = arg;
         });
       } else {
         args.push(...(await Promise.all(params.map((p) => this.initializeInstance(p)))));
       }
     }
-    return new instance(...args);
+    const concrete = new instance(...args);
+    this.initializedContainer.bind(this.createToken(instance), concrete);
+    return concrete;
   }
 
   getModules(module: Type<IModule>): Type<IModule>[] {
@@ -98,21 +134,23 @@ export class AppModuleFactory {
     return ([] as Type<ICommand>[]).concat(...modules.map((m) => this.getModuleCommands(m)));
   }
 
+  registerProvider(provider: Type<any> | Provider): void {
+    let token;
+    let value;
+    if (typeof provider === 'function') {
+      token = this.createToken(provider);
+      value = provider;
+    } else {
+      token = typeof provider.provide === 'function' ? this.createToken(provider.provide) : provider.provide;
+      value = provider.useClass || provider.useValue || { useFactory: provider.useFactory, inject: provider.inject };
+    }
+    this.providersContainer.bind(token, value);
+  }
+
   registerProviders(modules: Type<IModule>[]): void {
     const providers: Provider[] | Type<any>[] = ([] as any[])
       .concat(...modules.map((m) => (Reflect.getMetadata(MODULE_METADATA, m) as ModuleOptions)?.providers))
       .filter(Boolean);
-    providers.forEach((p: Type<any> | Provider) => {
-      let token;
-      let value;
-      if (typeof p === 'function') {
-        token = this.createToken(p);
-        value = p;
-      } else {
-        token = typeof p.provide === 'function' ? this.createToken(p.provide) : p.provide;
-        value = p.useClass || p.useValue;
-      }
-      this.providersContainer.bind(token, value);
-    });
+    providers.forEach((p: Type<any> | Provider) => this.registerProvider(p));
   }
 }

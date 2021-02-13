@@ -9,7 +9,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const env = dotenv.config();
   const application = new App(new Client(), env.parsed as AppConfig);
-  await new AppModuleFactory(application).create(AppModule);
+  const app = await new AppModuleFactory(application).create(AppModule);
+  app.client.on('message', app.handleMessages.bind(app));
 }
 
 bootstrap();

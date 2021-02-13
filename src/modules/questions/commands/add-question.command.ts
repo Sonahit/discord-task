@@ -2,11 +2,13 @@ import { Command } from '@src/core/decorators/command.decorator';
 import { ArgumentsEnum } from '@src/core/enums/arguments.enum';
 import { ICommand } from '@src/core/interfaces/ICommand';
 import { KnexClient } from '@src/database/client';
-import { EmbedService } from '@src/modules/embed/embed.service';
+import { ReactionsService } from '@src/modules/reactions/reactions.service';
 import { Message } from 'discord.js';
+import { QuestionsEntity } from '../questions.entity';
 
 @Command({
   path: 'add-question',
+  description: 'Добавить вопрос',
   arguments: [
     {
       name: 'question',
@@ -15,9 +17,12 @@ import { Message } from 'discord.js';
   ],
 })
 export class AddQuestionCommand implements ICommand {
-  constructor(private client: KnexClient, private embedService: EmbedService) {}
+  constructor(private client: KnexClient, private reactionsService: ReactionsService) {}
 
-  exec(message: Message, [question]: [string]): void {
-    throw new Error('Method not implemented.');
+  async exec(message: Message, [question]: [string]): Promise<void> {
+    const entity = new QuestionsEntity();
+    entity.text = question;
+    await this.client.knex.insert(entity).into(QuestionsEntity.tableName);
+    this.reactionsService.ok(message);
   }
 }

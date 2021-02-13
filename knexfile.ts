@@ -1,4 +1,5 @@
 require('ts-node/register');
+require('tsconfig-paths/register');
 import { resolve } from 'path';
 import dotenv from 'dotenv';
 

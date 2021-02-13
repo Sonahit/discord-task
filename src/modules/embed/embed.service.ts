@@ -2,7 +2,7 @@ import { Message, MessageEmbed } from 'discord.js';
 import { Embed } from './embed.interface';
 
 export class EmbedService {
-  async createEmbed(embedStruct: Embed): Promise<MessageEmbed> {
+  async createEmbed(embedStruct?: Embed): Promise<MessageEmbed> {
     const embed = new MessageEmbed(embedStruct);
     return embed;
   }

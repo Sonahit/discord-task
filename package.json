@@ -6,9 +6,11 @@
   "scripts": {
     "build": "tsc -P ./tsconfig.json",
     "start:prod": "node ./build/main",
-    "start": "ts-node -P ./tsconfig.json -r tsconfig-paths/register ./src/main"
+    "start": "ts-node -P ./tsconfig.json -r tsconfig-paths/register ./src/main",
+    "knex": "knex"
   },
   "dependencies": {
+    "class-transformer": "^0.3.2",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
     "fp-ts": "^2.9.5",

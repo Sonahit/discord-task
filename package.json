@@ -1,16 +1,26 @@
 {
   "name": "discord-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "main.js",
   "license": "MIT",
+  "scripts": {
+    "build": "tsc -P ./tsconfig.json",
+    "start:prod": "node ./build/main",
+    "start": "ts-node -P ./tsconfig.json -r tsconfig-paths/register ./src/main"
+  },
   "dependencies": {
     "discord.js": "^12.5.1",
+    "dotenv": "^8.2.0",
     "fp-ts": "^2.9.5",
     "knex": "^0.21.17",
+    "path-to-regexp": "^6.2.0",
     "pg": "^8.5.1",
+    "reflect-metadata": "^0.1.13",
     "tsconfig-paths": "^3.9.0"
   },
   "devDependencies": {
+    "@types/knex": "^0.16.1",
+    "@types/node": "^14.14.27",
     "@typescript-eslint/eslint-plugin": "^4.15.0",
     "@typescript-eslint/parser": "^4.15.0",
     "eslint": "^7.20.0",

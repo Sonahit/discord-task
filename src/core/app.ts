@@ -9,7 +9,7 @@ import { BotError } from './errors/bot.error';
 import { ArgumentsEnum } from './enums/arguments.enum';
 import { Argument } from './types/Argument';
 import { DELIMITER } from './constants/app.constants';
-import { ReactionsEnum } from '@src/modules/reactions/reactions.enum';
+import { ReactionsEnum } from '@modules/reactions/reactions.enum';
 
 export class App {
   public logger: ILogger = new Logger();

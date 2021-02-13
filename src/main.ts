@@ -1,5 +1,5 @@
-import { Client } from 'discord.js';
 import 'reflect-metadata';
+import { Client } from 'discord.js';
 import { App } from './core/app';
 import { AppConfig } from './core/types';
 import * as dotenv from 'dotenv';

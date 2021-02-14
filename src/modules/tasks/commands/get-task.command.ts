@@ -4,13 +4,13 @@ import { ICommand } from '@src/core/interfaces/ICommand';
 import { KnexClient } from '@src/database/client';
 import { ReactionsService } from '@src/modules/reactions/reactions.service';
 import { Message } from 'discord.js';
-import { QuestionsEntity } from '../questions.entity';
+import { TaskEntity } from '../task.entity';
 import { plainToClass } from 'class-transformer';
 import { EmbedService } from '@src/modules/embed/embed.service';
 
 @Command({
-  path: 'get-questions',
-  description: 'Получить конечный список вопросов',
+  path: 'get-task',
+  description: 'Получить конечный список заданий',
   arguments: [
     {
       name: 'count',
@@ -19,7 +19,7 @@ import { EmbedService } from '@src/modules/embed/embed.service';
     },
   ],
 })
-export class GetQuestionCommand implements ICommand {
+export class GetTaskCommand implements ICommand {
   constructor(
     private client: KnexClient,
     private reactionsService: ReactionsService,
@@ -27,19 +27,16 @@ export class GetQuestionCommand implements ICommand {
   ) {}
 
   async exec(message: Message, [count = 3]: [number]): Promise<void> {
-    const questions = (await this.client.knex.select<QuestionsEntity[]>().from(QuestionsEntity.tableName)).map((v) =>
-      plainToClass(QuestionsEntity, v),
+    const tasks = (await this.client.knex.select<TaskEntity[]>().from(TaskEntity.tableName)).map((v) =>
+      plainToClass(TaskEntity, v),
     );
-    const questionsCount = count > questions.length ? questions.length : count;
-    const selectedQuestions = Array.from(
-      { length: questionsCount },
-      () => questions[Math.floor(Math.random() * questions.length)],
-    );
+    const TaskCount = count > tasks.length ? tasks.length : count;
+    const selectedTask = Array.from({ length: TaskCount }, () => tasks[Math.floor(Math.random() * tasks.length)]);
     const embed = await this.embedService.createEmbed();
 
-    embed.setTitle('Выбранные вопросы');
-    selectedQuestions.forEach((q, i) => {
-      embed.addField(`Вопрос #${i + 1}-${q.id}`, q.text);
+    embed.setTitle('Выбранные задания');
+    selectedTask.forEach((q, i) => {
+      embed.addField(`Задание #${i + 1}-${q.id}`, q.text);
     });
     await this.reactionsService.ok(message);
     await message.channel.send(embed);
